@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vault">
+<meta name="application-name" content="Vault">
+<meta name="theme-color" content="#0c0e13">
+<meta name="description" content="Consulta de senhas e equipamentos">
+
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
+
+<title>Vault</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: #0c0e13;
+    overflow: hidden;
+    font-family: sans-serif;
+  }
+
+  /* Tela de carregamento inicial */
+  #loading {
+    position: fixed; inset: 0;
+    background: #0c0e13;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 20px; z-index: 100;
+    transition: opacity .4s;
+  }
+  #loading.hide { opacity: 0; pointer-events: none; }
+
+  .logo {
+    width: 72px; height: 72px; border-radius: 20px;
+    background: #1c2030;
+    border: 1px solid rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 48px rgba(79,255,176,.2);
+  }
+  .app-name {
+    font-size: 26px; font-weight: 800;
+    color: #e8eaf2; letter-spacing: -.5px;
+  }
+  .bar-wrap {
+    width: 110px; height: 3px;
+    background: #1c2030; border-radius: 10px; overflow: hidden;
+  }
+  .bar {
+    height: 100%; background: #4fffb0;
+    border-radius: 10px; width: 0;
+    animation: load 1.2s ease forwards;
+  }
+  @keyframes load { to { width: 100%; } }
+
+  /* Offline banner */
+  #offline-banner {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: #ff6b6b; color: #fff;
+    font-size: 13px; font-weight: 600;
+    text-align: center; padding: 8px;
+    z-index: 999; display: none;
+  }
+  #offline-banner.show { display: block; }
+
+  /* iframe que carrega o Apps Script */
+  #app-frame {
+    position: fixed;
+    /* empurra para baixo do banner quando offline */
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%;
+    border: none;
+    background: #0c0e13;
+    opacity: 0; transition: opacity .3s;
+  }
+  #app-frame.ready { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="offline-banner">⚠ Sem conexão — algumas funções podem estar indisponíveis</div>
+
+<div id="loading">
+  <div class="logo">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4fffb0" stroke-width="1.8" stroke-linecap="round">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  </div>
+  <div class="app-name">Vault</div>
+  <div class="bar-wrap"><div class="bar"></div></div>
+</div>
+
+<!--
+  ↓↓↓ SUBSTITUA PELA URL DO SEU APPS SCRIPT ↓↓↓
+  Exemplo: https://script.google.com/macros/s/SEU_ID/exec
+-->
+<iframe
+  id="app-frame"
+  src="COLE_AQUI_A_URL_DO_APPS_SCRIPT"
+  allow="clipboard-write; clipboard-read"
+  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+></iframe>
+
+<script>
+  // Registra Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(r => console.log('SW registrado:', r.scope))
+      .catch(e => console.warn('SW falhou:', e));
+  }
+
+  // Quando o iframe carregar, esconde o loading
+  const frame   = document.getElementById('app-frame');
+  const loading = document.getElementById('loading');
+
+  frame.addEventListener('load', () => {
+    // Aguarda a animação da barra terminar (1.2s) antes de mostrar
+    setTimeout(() => {
+      loading.classList.add('hide');
+      frame.classList.add('ready');
+      setTimeout(() => loading.style.display = 'none', 400);
+    }, 1300);
+  });
+
+  // Detecta online/offline
+  const banner = document.getElementById('offline-banner');
+  function updateOnline() {
+    banner.classList.toggle('show', !navigator.onLine);
+    // Ajusta o iframe para não sobrepor o banner
+    frame.style.top = navigator.onLine ? '0' : '36px';
+  }
+  window.addEventListener('online',  updateOnline);
+  window.addEventListener('offline', updateOnline);
+  updateOnline();
+</script>
+</body>
+</html>
