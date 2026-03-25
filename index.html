@@ -19,59 +19,202 @@
 <title>Vault</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
   html, body {
     width: 100%; height: 100%;
     background: #0c0e13;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 20px; font-family: sans-serif;
+    overflow: hidden;
+    font-family: sans-serif;
   }
+
+  /* Splash */
+  #splash {
+    position: fixed; inset: 0; z-index: 100;
+    background: #0c0e13;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px;
+    transition: opacity .4s;
+  }
+  #splash.hide { opacity: 0; pointer-events: none; }
+
   .logo {
     width: 72px; height: 72px; border-radius: 20px;
     background: #1c2030; border: 1px solid rgba(255,255,255,.15);
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 0 48px rgba(79,255,176,.2);
   }
-  .name {
-    font-size: 26px; font-weight: 800;
-    color: #e8eaf2; letter-spacing: -.5px;
-  }
-  .bar-wrap {
-    width: 110px; height: 3px;
-    background: #1c2030; border-radius: 10px; overflow: hidden;
-  }
-  .bar {
-    height: 100%; background: #4fffb0;
-    border-radius: 10px; width: 0;
-    animation: load 1s ease forwards;
-  }
+  .app-name { font-size: 26px; font-weight: 800; color: #e8eaf2; letter-spacing: -.5px; }
+  .bar-wrap  { width: 110px; height: 3px; background: #1c2030; border-radius: 10px; overflow: hidden; }
+  .bar       { height: 100%; background: #4fffb0; border-radius: 10px; width: 0; animation: load 1.2s ease forwards; }
   @keyframes load { to { width: 100%; } }
+
+  /* iframe ocupa tudo */
+  #app-frame {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    border: none; background: #0c0e13;
+    opacity: 0; transition: opacity .3s;
+  }
+  #app-frame.ready { opacity: 1; }
+
+  /* Modal de confirmação (substitui o alert/confirm nativo) */
+  #confirm-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.75);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+  #confirm-overlay.show { opacity: 1; pointer-events: auto; }
+
+  #confirm-box {
+    background: #13161e;
+    border: 1.5px solid rgba(255,255,255,.12);
+    border-radius: 18px;
+    padding: 24px 20px 20px;
+    width: 100%; max-width: 320px;
+    display: flex; flex-direction: column; gap: 16px;
+    transform: scale(.92);
+    transition: transform .25s cubic-bezier(.34,1.4,.64,1);
+  }
+  #confirm-overlay.show #confirm-box { transform: scale(1); }
+
+  #confirm-title {
+    font-size: 17px; font-weight: 700;
+    color: #e8eaf2; line-height: 1.4;
+    font-family: sans-serif;
+  }
+  #confirm-sub {
+    font-size: 14px; color: #9aa0b8;
+    line-height: 1.5; margin-top: -8px;
+  }
+  .confirm-btns { display: flex; gap: 10px; }
+  .btn-cancel-c {
+    flex: 1; padding: 12px; border-radius: 10px;
+    background: #1c2030; border: 1.5px solid rgba(255,255,255,.08);
+    color: #9aa0b8; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-cancel-c:hover { border-color: rgba(255,255,255,.18); color: #e8eaf2; }
+  .btn-confirm-c {
+    flex: 1; padding: 12px; border-radius: 10px;
+    font-size: 14px; font-weight: 700; cursor: pointer; transition: all .15s;
+  }
+  .btn-confirm-c.green  { background: rgba(79,255,176,.11); border: 1.5px solid #4fffb0; color: #4fffb0; }
+  .btn-confirm-c.red    { background: rgba(255,107,107,.11); border: 1.5px solid #ff6b6b; color: #ff6b6b; }
+  .btn-confirm-c.yellow { background: rgba(255,200,87,.11);  border: 1.5px solid #ffc857; color: #ffc857; }
+  .btn-confirm-c:hover  { opacity: .85; }
 </style>
 </head>
 <body>
 
-<div class="logo">
-  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4fffb0" stroke-width="1.8" stroke-linecap="round">
-    <rect x="3" y="11" width="18" height="11" rx="2"/>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-  </svg>
+<!-- Splash -->
+<div id="splash">
+  <div class="logo">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4fffb0" stroke-width="1.8" stroke-linecap="round">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  </div>
+  <div class="app-name">Vault</div>
+  <div class="bar-wrap"><div class="bar"></div></div>
 </div>
-<div class="name">Vault</div>
-<div class="bar-wrap"><div class="bar"></div></div>
+
+<!-- App em iframe -->
+<iframe
+  id="app-frame"
+  src="https://script.google.com/macros/s/AKfycbzN7ml68BVPO0u2OFThdNpZs8m-XYuvyb5Ytz1mM614dOr-SnXz8yqvofScMWS9cZYr3Q/exec"
+  allow="clipboard-write; clipboard-read"
+  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
+></iframe>
+
+<!-- Modal confirm (substitui window.confirm do iframe) -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <div id="confirm-title">Confirmar</div>
+    <div id="confirm-sub" style="display:none"></div>
+    <div class="confirm-btns">
+      <button class="btn-cancel-c"  id="confirm-no">Cancelar</button>
+      <button class="btn-confirm-c green" id="confirm-yes">Confirmar</button>
+    </div>
+  </div>
+</div>
 
 <script>
-  // URL do seu Apps Script
-  const APP_URL = 'https://script.google.com/macros/s/AKfycbzN7ml68BVPO0u2OFThdNpZs8m-XYuvyb5Ytz1mM614dOr-SnXz8yqvofScMWS9cZYr3Q/exec';
-
-  // Registra Service Worker
+  // Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 
-  // Redireciona após a animação (1 segundo)
-  setTimeout(() => {
-    window.location.replace(APP_URL);
-  }, 1000);
+  // Splash → esconde quando iframe carregar
+  const frame   = document.getElementById('app-frame');
+  const splash  = document.getElementById('splash');
+
+  frame.addEventListener('load', () => {
+    setTimeout(() => {
+      splash.classList.add('hide');
+      frame.classList.add('ready');
+      setTimeout(() => splash.style.display = 'none', 400);
+    }, 1300);
+  });
+
+  // ── MODAL CONFIRM ──────────────────────────────────────────────
+  // O iframe não pode usar window.confirm (bloqueado em iframes)
+  // Solução: o Index.html intercepta via postMessage e mostra modal próprio
+
+  const overlay    = document.getElementById('confirm-overlay');
+  const titleEl    = document.getElementById('confirm-title');
+  const subEl      = document.getElementById('confirm-sub');
+  const yesBtn     = document.getElementById('confirm-yes');
+  const noBtn      = document.getElementById('confirm-no');
+
+  let confirmResolve = null;
+
+  function showConfirm(msg, type) {
+    // Separa título e subtítulo se tiver quebra de linha
+    const parts = msg.split('\n');
+    titleEl.textContent = parts[0];
+    if (parts[1]) {
+      subEl.textContent    = parts[1];
+      subEl.style.display  = 'block';
+    } else {
+      subEl.style.display  = 'none';
+    }
+
+    // Cor do botão conforme tipo
+    yesBtn.className = 'btn-confirm-c ' + (type || 'green');
+    yesBtn.textContent = type === 'red' ? 'Rejeitar' : type === 'yellow' ? 'Resetar' : 'Confirmar';
+
+    overlay.classList.add('show');
+
+    return new Promise(resolve => {
+      confirmResolve = resolve;
+    });
+  }
+
+  yesBtn.addEventListener('click', () => {
+    overlay.classList.remove('show');
+    if (confirmResolve) { confirmResolve(true); confirmResolve = null; }
+  });
+
+  noBtn.addEventListener('click', () => {
+    overlay.classList.remove('show');
+    if (confirmResolve) { confirmResolve(false); confirmResolve = null; }
+  });
+
+  // Escuta mensagens do iframe
+  window.addEventListener('message', async (e) => {
+    if (!e.data || e.data.type !== 'VAULT_CONFIRM') return;
+    const result = await showConfirm(e.data.msg, e.data.style);
+    // Responde ao iframe com o resultado
+    frame.contentWindow.postMessage({
+      type: 'VAULT_CONFIRM_RESULT',
+      id:   e.data.id,
+      result
+    }, '*');
+  });
 </script>
 </body>
 </html>
